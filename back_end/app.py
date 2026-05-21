@@ -14,6 +14,10 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 app.register_blueprint(login_api, url_prefix='/login/api')
 
+@app.route('/health')
+def health():
+    return {'status': 'ok'}, 200
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run('0.0.0.0', port=port)

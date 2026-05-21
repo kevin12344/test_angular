@@ -21,7 +21,7 @@ export class LoginComponent {
         console.log('正在嘗試登入...', this.loginData);
 
         // 第一步：發送登入請求
-        this.http.post<any>('http://localhost:5000/login/api/test', this.loginData)
+        this.http.post<any>('/api/login/api/test', this.loginData)
             .subscribe({
             next: (res) => {
                 console.log('登入 API 回傳結果:', res);

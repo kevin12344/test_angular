@@ -17,7 +17,7 @@ export class MainComponent implements OnInit {
 
   ngOnInit() {
     this.serverMessage = '連線中...';
-    this.http.get<any>('http://localhost:5000/login/api/me')
+    this.http.get<any>('/api/login/api/me')
       .subscribe({
         next: (res) => { this.serverMessage = `${res.employee_id} ${res.employee_name}`; this.cdr.detectChanges(); },
         error: (err) => { this.serverMessage = `錯誤 ${err.status}：${err.error?.message || '無法連線'}`; this.cdr.detectChanges(); }

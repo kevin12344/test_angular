@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // 必須導入這個才能用 ngModel
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [CommonModule, FormsModule], // 確保這裡有 FormsModule
+    imports: [CommonModule, FormsModule],
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.css']
 })
@@ -15,27 +15,32 @@ export class LoginComponent {
     loginData = { username: '', password: '' };
 
     constructor(private http: HttpClient, private router: Router) {}
-    
-    // 登入
-    onSubmit() {
-        console.log('正在嘗試登入...', this.loginData);
 
-        // 第一步：發送登入請求
-        this.http.post<any>('/api/login/api/test', this.loginData)
+    private async sha256Hex(text: string): Promise<string> {
+        const buf = new TextEncoder().encode(text);
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    // 登入
+    async onSubmit() {
+        const passwordHash = await this.sha256Hex(this.loginData.password);
+        const payload = { username: this.loginData.username, password: passwordHash };
+
+        this.http.post<any>('/api/login/api/test', payload)
             .subscribe({
             next: (res) => {
-                console.log('登入 API 回傳結果:', res);
-
                 if (res.success && res.token) {
-                localStorage.setItem('auth_token', res.token);
-                this.router.navigate(['/main']);
+                    localStorage.setItem('auth_token', res.token);
+                    this.router.navigate(['/main']);
                 } else {
-                console.warn('登入失敗，後端回傳 success 為 false 或沒給 token');
-                alert('登入失敗：' + (res.message || '帳號或密碼錯誤'));
+                    alert('登入失敗：' + (res.message || '帳號或密碼錯誤'));
                 }
             },
             error: (err) => {
-                console.error('登入請求本身發生錯誤 (500 或網路問題):', err);
+                console.error('登入請求發生錯誤:', err);
                 alert('伺服器連線失敗');
             }
         });

@@ -1,11 +1,19 @@
+import os
+import hmac
+import hashlib
+import secrets
 import jwt
 import datetime
 from flask import request, jsonify, Blueprint
 from programs.core.db_process.jw_common.main import qry_employee
 
-SECRET_KEY = "1234567890"
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or secrets.token_urlsafe(64)
 
 bp_main = Blueprint('login_api', __name__)
+
+
+def _sha256_hex(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
 @bp_main.route('/test', methods=['POST'])
@@ -15,14 +23,15 @@ def login():
         return jsonify({"success": False, "message": "No data received"}), 400
 
     username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
+    password_hash = data.get('password', '').strip().lower()
 
     employee = qry_employee(username)
 
     if not employee:
         return jsonify({"success": False, "message": "帳號不存在"}), 401
 
-    if (employee['id'] or '')[-4:] != password:
+    expected_hash = _sha256_hex((employee['id'] or '')[-4:])
+    if not hmac.compare_digest(expected_hash, password_hash):
         return jsonify({"success": False, "message": "密碼錯誤"}), 401
 
     now = datetime.datetime.now(datetime.timezone.utc)

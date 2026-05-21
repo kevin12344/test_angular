@@ -16,7 +16,10 @@ export class LoginComponent {
 
     constructor(private http: HttpClient, private router: Router) {}
 
-    private async sha256Hex(text: string): Promise<string> {
+    private async sha256Hex(text: string): Promise<string | null> {
+        if (!globalThis.crypto || !globalThis.crypto.subtle) {
+            return null;
+        }
         const buf = new TextEncoder().encode(text);
         const hash = await crypto.subtle.digest('SHA-256', buf);
         return Array.from(new Uint8Array(hash))
@@ -26,8 +29,11 @@ export class LoginComponent {
 
     // 登入
     async onSubmit() {
-        const passwordHash = await this.sha256Hex(this.loginData.password);
-        const payload = { username: this.loginData.username, password: passwordHash };
+        const hashed = await this.sha256Hex(this.loginData.password);
+        const payload = {
+            username: this.loginData.username,
+            password: hashed ?? this.loginData.password
+        };
 
         this.http.post<any>('/api/login/api/test', payload)
             .subscribe({

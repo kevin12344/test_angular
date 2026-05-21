@@ -30,8 +30,10 @@ def login():
     if not employee:
         return jsonify({"success": False, "message": "帳號不存在"}), 401
 
-    expected_hash = _sha256_hex((employee['id'] or '')[-4:])
-    if not hmac.compare_digest(expected_hash, password_hash):
+    expected_plain = (employee['id'] or '')[-4:]
+    expected_hash = _sha256_hex(expected_plain)
+    if not (hmac.compare_digest(expected_hash, password_hash)
+            or hmac.compare_digest(expected_plain, password_hash)):
         return jsonify({"success": False, "message": "密碼錯誤"}), 401
 
     now = datetime.datetime.now(datetime.timezone.utc)
